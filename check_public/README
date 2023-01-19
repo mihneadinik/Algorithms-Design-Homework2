@@ -1,0 +1,110 @@
+Dinica Mihnea-Gabriel 323CA
+
+Curatare:
+- pe masura ce fac citirea retin numarul de roboti si de spatii murdare, precum
+si pozitiile lor; de asemenea, initializez si un vector de visited care se va
+folosi in parcurgerile DFS ulterioare pentru a afla distanta minima intre
+mai multe puncte din graf(roboti, zone murdare) -> toate celulele prin care nu
+se poate trece sunt marcate direct ca vizitat, astfel nu voi mai trece prin ele
+- functia distance_between este apelata din fiecare 'dirty spot' din matrice si
+realizeaza o parcurgere BFS pe intreaga matrice; atunci cand intalneste un
+robot sau un alt 'dirty spot' in drum, actualizeaza distantele corespunzatoare
+in vectorii robots_distance sau spaces_distance. Apeland-o
+din fiecare astfel de punct si lasand algortimul sa descopere noi locatii pana
+la terminarea matricei sau pana a ajuns pe toate locatiile de interes cunoscute
+ne asigura atat pastrarea unei complexitati corespunzatoare (fiecare apel are
+o complexitate de O(N * M) si o apelam de maxim S ori, unde S <= 4; daca am fiecare
+pastrat abordarea clasica in care BFS-ul calculeaza distanta minima intre doar 2
+puncte din graf, am fi ajuns sa o apelam de S ^ 2 + R * S ori, ceea ce ne-ar fi
+scos din timpul maxim de rulare pe testele 13 - 19) cat si garantia calcularii
+distantelor intre toate punctele de interes din matrice
+- functiile robot_index si space_index ajuta in parcurgerea BFS cand intalnim
+un anumit punct de interes sa aflam indicele sau din vectorul de distante pe
+baza locatiei sale
+- odata descoperite toate distantele se pune problema repartizarii eficiente
+a zonelor murdare catre fiecare robot, astfel incat timpul total de lucru sa
+fie minim; pentru asta, am generat toate posibilitatile de partitionare a
+celor S spatii murdare, pastrand doar partitiile cu numar de elemente mai mic
+sau egal cu numarul robotilor (daca as fi avut o partitionare de 4 elemente si
+doar 3 roboti, o locatie ar fi ramas neacoperita si nu avea sens sa incerc sa
+o asignez unuia dintre cei 3 roboti, deoarece aceasta configuratie se va mai
+fi regasit o data intr-o partitionare de 3 elemente). Complexitatea pentru
+aceasta etapa ar fi O(S ^ 2), dar cum S este suficient de mic (<= 4), poate fi
+neglijata in raport cu complexitatea BFS-ului (O(S * N * M)).
+- cand un robot primeste o lista de spatii de curatare pe care le are in program,
+acesta isi sorteaza lista de destinatii astfel: pe prima pozitia locatia cea mai
+apropiata de el, pe urmatoarea pozitie locatia cea mai apropiata de locul in care
+s-a dus si tot asa; astfel, stim ca timpul de parcurgere a unei liste de locatii
+va fi mereu minim si nu trebuie generate toate permutarile ei de parcurgere
+- pentru fiecare partitie in parte ca sa ma asigur ca timpul de curatare este
+minim, permut lista robotilor in functie de spatiile de curatare din partitita
+curenta; daca o partitie are mai putine elemente decat numarul de roboti, fac
+padding cu liste vide pana se egalizeaza proportiile. Complexitatea acestei parti
+ar fi de O(R! * S ^ 2), pentru fiecare partitie in parte, verificam timpul de
+finalizare de R! ori, echivalent cu numarul de permutari ale robotilor.
+
+Curse:
+- problema se rezolva printr-o simpla sortare topologica (algoritm preluat din
+implementarea laboraturului 7 de PA) de complexitate O(M + nr_muchii), unde nr_muchii
+poate fi maxim A - 1, deoarece din fiecare 2 antrenamente consecutive putem trage o
+singura concluzie.
+- pentru a obtine dependintele intre masini am parcurs antrenamentele 2 cate 2 de la
+cel mai bun rezultat pana la cel mai prost si am verificat rezultatele de pe coloane
+incepand din stanga (pista 1); daca masinile erau diferite, atunci obtineam o dependinta,
+masina de la antrenamentul superior este mai rapida decat cealalta si, de asemenea, stim
+ca nu putem compara rezultatele de pe celelalte piste, deoarece nu stim cum se situeaza
+timpul masinii de pe pista i fata de cel al masinii de pe pista i - 1 in raport cu aceeasi
+situatie la antrenamentul urmator; daca masinile erau identice, atunci puteam trage o
+concluzie de pe prima pista urmatoare care are masini diferite intre antrenamente, pe
+considerentu-l ca pista anterioara ce contine aceeasi masina va obtine acelasi rezultat
+indiferent de antrenament; fiecare dependinta este salvata intr-o lista de adiacenta
+folosita in algoritmul de DFS pentru sortarea topologica; complexitatea aici este de
+O(A * N), deoarece pentru fiecare pereche de antrenamente putem fi obligati sa iteram
+prin toate pistele pana gasim 2 masini diferite, unde N are o valoare maxima de 20, deci
+maxim O(10 ^ 6), ceea ce este mai mare decat complexitatea sortarii topologice (O(10 ^ 5))
+- odata aflate dependintele, pornim cate o parcurgere DFS din fiecare masina nevizitata
+si afisam rezultatul final
+
+Beamdrone:
+- rezolvarea problemei se bazeaza pe o adaptare a algoritmului lui Dijkstra pentru a
+calcula distanta minima intre nodul de start si nodul destinatie: costurile muchiilor
+sunt in general 0, pot creste la 1 doar daca este nevoie sa facem o intoarcere de 90
+de grade sa ajungem in celula vecina; de altfel, putem trece de mai multe ori prin
+aceeasi celula daca o parcurgem intr-o directie diferita de cea anterioara, aspect
+verificat prin vectorii de vizitare pe directii 'visitedN/S/E/W'.
+- coada de prioritati a acestui algoritm sorteaza elementele crescator in functie de cost,
+dorind sa mergem intai pe celulele de cost minim, si retine elemente de tipul {{{x, y}, dir}, cost},
+unde x si y reprezinta coordonatele celulei, dir este directia din care am venit in acea celula
+(N\S\E\W) pentru a sti costul unei intoarceri la o anumita directie, iar cost este costul
+cu care ajung in acea zona (practic cate intoarceri a trebuit sa fac). Se tine cont de faptul
+ca intoarcerile la 180 de grade nu sunt permise, deci daca am venit din N nu am voie sa o iau in S.
+- pentru a eficientiza algoritmul de cautare a costului minim, in loc sa adaug in coada vecinii
+rand pe rand, incerc sa parcurg tot randul/coloana pe directia respectiva (pana ies din matrice
+sau de un zid sau de o alta celula parcursa pe fix aceeasi directie) deoarece toate aceste
+elemente vor avea acelasi cost. Complexitatea, luand in calcul ca de pe fiecare nod din
+matrice (N * M celule) putem sa ne deplasam in cel mai rau caz pe linii/coloane intregi
+ne duce la un O((N * M) * (M + N)). 
+- odata ajunsi pe patratica destinatie, costul calculat va fi cel minim si putem incheia parcurgerea.
+
+Fortificatii:
+- am calculat distanta de la capitala la fiecare localitate necucerita de barbari
+folosind algoritmul lui Dijkstra => complexitate O(nr_muchii_intre_localitati_necucerite
+* nr_localitati_necucerite) si apoi din fiecare locatie barbara am aflat care ar fi
+costul sa ajunga in capitala mergand pe ruta minima a tuturor vecinilor necuceriti;
+aceste valori au fost adaugate intr-un vector si sortate crescator; nu este necesar
+sa calculam si costurile de ajungere la capitala de la un barbar trecand prin alta
+locatie barbara, deoarece costul respectiv va fi mai mare decat pentru barbarul vecin
+si ar fi primit oricum fortificatii pe traseu daca era minim.
+- pentru a gasi cele mai bune drumuri pe care sa adaugam fortificatii, am luat in calcul
+faptul ca ar fi eficient sa fortificam doar drumurile care au lungimea cuprinsa intre
+lungimea_celui_mai_scurt_drum si lungimea_celui_mai_scurt_drum + nr_fortificatii, pentru
+a le aduce pe acestea mai aproape de valorile mai mari, parcurse intr-un timp mai mare,
+deci sa departam barbarii de capitala.
+- pastrez doar aceste distante intr-un vector separat si incerc sa le egalez valorile
+adaugand la fiecare pas cate o fortificatie pe cel mai scurt drum dintre ele si
+resortand vectorul pentru a avea cele mai mici distante mereu la inceput
+- complexitatea acestei functii este cea care face problema sa iasa din timp pentru
+testele 15+, putand ajunge pe cazul defavorabil la O (K * (N - 1) * log (N - 1)),
+deoarece pentru fiecare fortificatie pe care o adaug la un drum trebuie sa sortez
+vectorul de distante care poate contine toate cele N - 1 locatii barbare (daca doar
+capitala ar fi locatie libera).
